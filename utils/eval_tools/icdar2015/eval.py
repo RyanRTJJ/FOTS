@@ -32,7 +32,7 @@ def default_evaluation_params():
         'LTRB': False,  # LTRB:2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
         'CRLF': False,  # Lines are delimited by Windows CRLF format
         'CONFIDENCES': False,  # Detections must include confidence value. MAP and MAR will be calculated,
-        'SPECIAL_CHARACTERS': '!?.:,*"()·[]/\'',
+        'SPECIAL_CHARACTERS': '', #RYAN
         'ONLY_REMOVE_FIRST_LAST_CHARACTER': True
     }
 
@@ -148,10 +148,11 @@ def evaluate_method(pred: Tuple[dict], gt: Tuple[dict], evaluationParams:dict) -
 
         return AP
 
-    def transcription_match(transGt, transDet, specialCharacters = '!?.:,*"()·[]/\'',
+    def transcription_match(transGt, transDet, specialCharacters = '',   #RYAN
                             onlyRemoveFirstLastCharacterGT = True):
-
+        """
         if onlyRemoveFirstLastCharacterGT:
+            
             # special characters in GT are allowed only at initial or final position
             if (transGt == transDet):
                 return True
@@ -183,11 +184,12 @@ def evaluate_method(pred: Tuple[dict], gt: Tuple[dict], evaluationParams:dict) -
                 transDet = transDet[0:len(transDet) - 1]
 
             return transGt == transDet
-
-    def include_in_dictionary(transcription):
+        """
+        return True
+    def include_in_dictionary(transcription):   #RYAN
         """
         Function used in Word Spotting that finds if the Ground Truth transcription meets the rules to enter into the dictionary. If not, the transcription will be cared as don't care
-        """
+        
         # special case 's at final
         if transcription[len(transcription) - 2:] == "'s" or transcription[len(transcription) - 2:] == "'S":
             transcription = transcription[0:len(transcription) - 2]
@@ -195,25 +197,25 @@ def evaluate_method(pred: Tuple[dict], gt: Tuple[dict], evaluationParams:dict) -
         # hypens at init or final of the word
         transcription = transcription.strip('-')
 
-        specialCharacters = "'!?.:,*\"()·[]/"
+        specialCharacters = "'!?.:,*\"()Â·[]/"
         for character in specialCharacters:
             transcription = transcription.replace(character, ' ')
-
+        """
         transcription = transcription.strip()
-
+        
         if len(transcription) != len(transcription.replace(" ", "")):
             return False
 
         if len(transcription) < evaluationParams['MIN_LENGTH_CARE_WORD']:
             return False
 
-        notAllowed = "×÷·"
+        notAllowed = "Ã—Ã·Î‡"
 
         range1 = [ord(u'a'), ord(u'z')]
         range2 = [ord(u'A'), ord(u'Z')]
-        range3 = [ord(u'À'), ord(u'ƿ')]
-        range4 = [ord(u'Ǆ'), ord(u'ɿ')]
-        range5 = [ord(u'Ά'), ord(u'Ͽ')]
+        range3 = [ord(u'Ã€'), ord(u'Æ¿')]
+        range4 = [ord(u'Ç„'), ord(u'É¿')]
+        range5 = [ord(u'Î†'), ord(u'Ï¿')]
         range6 = [ord(u'-'), ord(u'-')]
 
         for char in transcription:
@@ -235,7 +237,7 @@ def evaluate_method(pred: Tuple[dict], gt: Tuple[dict], evaluationParams:dict) -
     def include_in_dictionary_transcription(transcription):
         """
         Function applied to the Ground Truth transcriptions used in Word Spotting. It removes special characters or terminations
-        """
+        
         # special case 's at final
         if transcription[len(transcription) - 2:] == "'s" or transcription[len(transcription) - 2:] == "'S":
             transcription = transcription[0:len(transcription) - 2]
@@ -243,10 +245,10 @@ def evaluate_method(pred: Tuple[dict], gt: Tuple[dict], evaluationParams:dict) -
         # hypens at init or final of the word
         transcription = transcription.strip('-')
 
-        specialCharacters = "'!?.:,*\"()·[]/"
+        specialCharacters = "'!?.:,*\"()Â·[]/"
         for character in specialCharacters:
             transcription = transcription.replace(character, ' ')
-
+        """ #RYAN
         transcription = transcription.strip()
 
         return transcription

@@ -13,6 +13,8 @@ class MyDataset(Dataset):
 
     def __init__(self, img_root, txt_root,limit=None):
         self.image_list, self.img_name = get_images(img_root,limit)
+        print('alpha 2. img_root =')
+        print(img_root)
         self.txt_root = txt_root
 
     def __getitem__(self, index):
@@ -24,7 +26,9 @@ class MyDataset(Dataset):
                                                                                          [0.5, 1, 2.0, 3.0]),
                                                                                      background_ratio=3. / 8)
         if bboxes is None or (bboxes is not None and len(bboxes) == 0):
+            print("failed ", img_path, img, text, bboxes)
             return self.__getitem__(index)
+        print("passed ", img_path, text)
         return img_path, img, score_map, geo_map, training_mask, text, bboxes
 
     def __len__(self):
@@ -311,7 +315,7 @@ class SynthTextDataset(Dataset):
                 new_h, new_w, _ = im.shape
                 score_map, geo_map, training_mask = generate_rbox((new_h, new_w), text_polys, text_tags)
 
-            # predict 出来的feature map 是 128 * 128， 所以 gt 需要取 /4 步长
+            # predict å‡ºæ¥çš„feature map æ˜¯ 128 * 128ï¼Œ æ‰€ä»¥ gt éœ€è¦å– /4 æ­¥é•¿
             images = im[:, :, ::-1].astype(np.float32)  # bgr -> rgb
             score_maps = score_map[::4, ::4, np.newaxis].astype(np.float32)
             geo_maps = geo_map[::4, ::4, :].astype(np.float32)

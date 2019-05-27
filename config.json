@@ -1,13 +1,13 @@
 {
-    "name": "united_2019-05-13_自有数据",
+    "name": "name-of-folder-of-saved-models",
     "cuda": true,
-    "gpus": [0],
+    "gpus": [0, 1, 2, 3],
     "finetune": "",
     "need_grad_backbone": true,
     "data_loader": {
         "dataset":"mydataset",
-        "image_dir": "/data/OCR/own_dataset/training_images",
-        "annotation_dir": "/data/OCR/own_dataset/training_gt",
+        "image_dir": "/full/path/to/FOTS/data/MSCOCO/images",
+        "annotation_dir": "/full/path/to/FOTS/data/MSCOCO/annotations",
         "batch_size": 4,
         "shuffle": true,
         "workers": 0
@@ -32,7 +32,7 @@
     "metrics": ["fots_metric"],
     "trainer": {
         "epochs": 10000,
-        "save_dir": "/data/OCR/model/own_dataset",
+        "save_dir": "/full/path/to/FOTS",
         "save_freq": 1,
         "verbosity": 2,
         "monitor": "loss",
@@ -46,6 +46,6 @@
             "img_h": 16,
             "hidden": 1024
         },
-        "keys": "number_and_dot"
+        "keys": "ryan_1"
     }
 }

@@ -1,3 +1,4 @@
+import pysnooper
 import os
 import torch
 import glob as gb
@@ -20,7 +21,6 @@ def get_images(root, limit=None):
         name.append(files[i].split('/')[-1])
     return files[:len(name)], name
 
-
 def load_annoataion(p):
     '''
     load annotation from the text file
@@ -37,7 +37,7 @@ def load_annoataion(p):
         for line in reader:
             label = line[-1]
             # strip BOM. \ufeff for python3,  \xef\xbb\bf for python2
-            line = [i.strip('\ufeff').strip('\xef\xbb\xbf') for i in line]
+            #line = [i.strip('\ufeff').strip('\xef\xbb\xbf') for i in line]
 
             x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, line[:8]))
             text_polys.append([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
@@ -45,8 +45,8 @@ def load_annoataion(p):
             if label == '*' or label == '###':
                 text_tags.append(True)
             else:
-                text_tags.append(False)
-        return np.array(text_polys, dtype=np.float32), texts, np.array(text_tags, dtype=np.bool)
+               text_tags.append(False)
+        return np.array(text_polys, dtype=np.float32), np.array(texts), np.array(text_tags, dtype=np.bool)
 
 
 def polygon_area(poly):
@@ -94,20 +94,17 @@ def check_and_validate_polys(polys, texts, tags, xxx_todo_changeme):
         validated_polys.append(poly)
         validated_text.append(text)
         validated_tags.append(tag)
-    return np.array(validated_polys), validated_text, np.array(validated_tags)
+    return np.array(validated_polys), np.array(validated_text), np.array(validated_tags)
 
 
-def crop_area(im, polys, tags, crop_background=False, max_tries=50):
+def crop_area(im, polys, tags, texts, crop_background=False, max_tries=50):
     '''
     make random crop from the input image
-    :param im:
-    :param polys:
-    :param tags:
-    :param crop_background:
-    :param max_tries:
-    :return:
+    
     '''
+    print('sigmai')
     h, w, _ = im.shape
+    print('sigma0')
     pad_h = h // 10
     pad_w = w // 10
     h_array = np.zeros((h + pad_h * 2), dtype=np.int32)
@@ -120,6 +117,7 @@ def crop_area(im, polys, tags, crop_background=False, max_tries=50):
         miny = np.min(poly[:, 1])
         maxy = np.max(poly[:, 1])
         h_array[miny + pad_h:maxy + pad_h] = 1
+    print('sigma2')
     # ensure the cropped area not across a text
     h_axis = np.where(h_array == 0)[0]
     w_axis = np.where(w_array == 0)[0]
@@ -155,11 +153,12 @@ def crop_area(im, polys, tags, crop_background=False, max_tries=50):
         im = im[ymin:ymax + 1, xmin:xmax + 1, :]
         polys = polys[selected_polys]
         tags = tags[selected_polys]
+        texts = texts[selected_polys]
         polys[:, :, 0] -= xmin
         polys[:, :, 1] -= ymin
-        return im, polys, tags, selected_polys
+        return im, polys, tags, texts, selected_polys
 
-    return im, polys, tags, np.array(len(polys))
+    return im, polys, tags, texts, np.array(len(polys))
 
 
 def shrink_poly(poly, r):
@@ -340,14 +339,14 @@ def sort_rectangle(poly):
     # First find the lowest point
     p_lowest = np.argmax(poly[:, 1])
     if np.count_nonzero(poly[:, 1] == poly[p_lowest, 1]) == 2:
-        # 底边平行于X轴, 那么p0为左上角
+        # åº•è¾¹å¹³è¡ŒäºŽXè½´, é‚£ä¹ˆp0ä¸ºå·¦ä¸Šè§’
         p0_index = np.argmin(np.sum(poly, axis=1))
         p1_index = (p0_index + 1) % 4
         p2_index = (p0_index + 2) % 4
         p3_index = (p0_index + 3) % 4
         return poly[[p0_index, p1_index, p2_index, p3_index]], 0.
     else:
-        # 找到最低点右边的点
+        # æ‰¾åˆ°æœ€ä½Žç‚¹å³è¾¹çš„ç‚¹
         p_lowest_right = (p_lowest - 1) % 4
         p_lowest_left = (p_lowest + 1) % 4
         angle = np.arctan(
@@ -356,14 +355,14 @@ def sort_rectangle(poly):
         if angle <= 0:
             print(angle, poly[p_lowest], poly[p_lowest_right])
         if angle / np.pi * 180 > 45:
-            # 这个点为p2
+            # è¿™ä¸ªç‚¹ä¸ºp2
             p2_index = p_lowest
             p1_index = (p2_index - 1) % 4
             p0_index = (p2_index - 2) % 4
             p3_index = (p2_index + 1) % 4
             return poly[[p0_index, p1_index, p2_index, p3_index]], -(np.pi / 2 - angle)
         else:
-            # 这个点为p3
+            # è¿™ä¸ªç‚¹ä¸ºp3
             p3_index = p_lowest
             p0_index = (p3_index + 1) % 4
             p1_index = (p3_index + 2) % 4
@@ -455,6 +454,7 @@ def generate_rbox(im_size, polys, tags):
     # mask used during traning, to ignore some hard areas
     training_mask = np.ones((h, w), dtype=np.uint8)
     rectangles = []
+    print('@@@@ ' + str(len(polys)) + ' ' + str(len(tags)))
 
     for poly_idx, poly_tag in enumerate(zip(polys, tags)):
         poly = poly_tag[0]
@@ -488,13 +488,13 @@ def generate_rbox(im_size, polys, tags):
             backward_edge = fit_line([p0[0], p3[0]], [p0[1], p3[1]])
             forward_edge = fit_line([p1[0], p2[0]], [p1[1], p2[1]])
             if point_dist_to_line(p0, p1, p2) > point_dist_to_line(p0, p1, p3):
-                # 平行线经过p2
+                # å¹³è¡Œçº¿ç»è¿‡p2
                 if edge[1] == 0:
                     edge_opposite = [1, 0, -p2[0]]
                 else:
                     edge_opposite = [edge[0], -1, p2[1] - edge[0] * p2[0]]
             else:
-                # 经过p3
+                # ç»è¿‡p3
                 if edge[1] == 0:
                     edge_opposite = [1, 0, -p3[0]]
                 else:
@@ -583,39 +583,57 @@ def rotate_image_and_points(image, points, angle):
 def image_label(txt_root, image_list, img_name, index,
                 input_size=512, random_scale=np.array([0.5, 1, 2.0, 3.0]),
                 background_ratio=3. / 8,
-                random_rotate_degree=np.arange(-15,16,2),
+                random_rotate_degree=np.arange(-15, 16, 2),
                 ):
     """
     get image's corresponding matrix and ground truth
-    如果预测样张较小的话，input_size需要适当调小，且是128的整数倍数
     """
 
     try:
+        #print('gamma1')
         image_filename = image_list[index]
         cur_img_name = img_name[index]
+        print(image_filename)
         cur_img = cv2.imread(image_filename)
         h, w, _ = cur_img.shape
 
-        gt_file_name = 'gt_' + cur_img_name.replace(cur_img_name.split('.')[1], 'txt')
+        print('gamma2')
+        gt_file_name = cur_img_name.replace(cur_img_name.split('.')[1], 'txt')
         gt_file_name = os.path.join(txt_root, gt_file_name)
-        # 加载并过滤掉不合适的多边形与文本
+        
+        print('gamma2b')
+        # åŠ è½½å¹¶è¿‡æ»¤æŽ‰ä¸åˆé€‚çš„å¤šè¾¹å½¢ä¸Žæ–‡æœ¬
+        print(gt_file_name)
         text_polys, texts, text_tags = load_annoataion(gt_file_name)  # text_polys: n * 4 * 2
+        print('gamma2bb')
         text_polys, texts, text_tags = check_and_validate_polys(text_polys, texts, text_tags, (h, w))
-        # 选择随机的缩放比例
+        # é€‰æ‹©éšæœºçš„ç¼©æ”¾æ¯”ä¾‹
+        
+        print('gamma2c')
         rd_scale = np.random.choice(random_scale)
         rd_rotate_degree = np.random.choice(random_rotate_degree)
-        # 将当前图像缩放到随机的缩放比例
+        # å°†å½“å‰å›¾åƒç¼©æ”¾åˆ°éšæœºçš„ç¼©æ”¾æ¯”ä¾‹
+        
+        print('gamma2d')
         cur_img = cv2.resize(cur_img, dsize=None, fx=rd_scale, fy=rd_scale)
+        print('gamma2e')
         text_polys *= rd_scale
+        print('gamma2f')
         cur_img, text_polys = rotate_image_and_points(cur_img, np.reshape(text_polys, (-1, 2)), rd_rotate_degree)
-        text_polys = np.reshape(text_polys, (-1,4, 2))
+        print('gamma2g')
+        text_polys = np.reshape(text_polys, (-1, 4, 2))
+        print('gamma2h')
         rectangles = []
 
-        # 一定概率概率随机裁剪背景还是有多边形的区域
+        print('gamma3')
+        # ä¸€å®šæ¦‚çŽ‡æ¦‚çŽ‡éšæœºè£å‰ªèƒŒæ™¯è¿˜æ˜¯æœ‰å¤šè¾¹å½¢çš„åŒºåŸŸ
         if np.random.rand() < background_ratio:
+            print('if taken')
             # crop background
-            cur_img, text_polys, text_tags, _ = crop_area(cur_img, text_polys, text_tags, crop_background=True)
-            assert len(text_polys) == 0, 'Background crop error'
+            print('gamma3b')
+            cur_img, text_polys, text_tags,texts, _ = crop_area(cur_img, text_polys, text_tags,texts, crop_background=True)           #These 2 lines were commented out by Ryan
+            print('gamma3c')
+            assert len(text_polys) == 0, 'Background crop error'                                                                      #These 2 lines were commented out by Ryan
             new_h, new_w, _ = cur_img.shape
             max_h_w_i = np.max([new_h, new_w, input_size])
             im_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
@@ -625,18 +643,22 @@ def image_label(txt_root, image_list, img_name, index,
             geo_map_channels = 5
             geo_map = np.zeros((input_size, input_size, geo_map_channels), dtype=np.float32)
             training_mask = np.ones((input_size, input_size), dtype=np.uint8)
+            
         else:
-            cur_img, text_polys, text_tags, _ = crop_area(cur_img, text_polys, text_tags, crop_background=False)
-            assert len(text_polys) > 0, 'Text area crop error'
+            print('else taken')
+            print('text_polys len = ' + str(len(text_polys)) + ', text_tags len = ' + str(len(text_tags)))
+            cur_img, text_polys, text_tags,texts, _ = crop_area(cur_img, text_polys, text_tags,texts, crop_background=False)          #These 3 lines were commented out by Ryan
+            print('cropped text_polys len = ' + str(len(text_polys)) + ', text_tags len = ' + str(len(text_tags)))                    #These 3 lines were commented out by Ryan
+            assert len(text_polys) > 0, 'Text area crop error'                                                                        #These 3 lines were commented out by Ryan
             h, w, _ = cur_img.shape
 
             new_h, new_w, _ = cur_img.shape
-            # 图像左上角pad填充
+            # å›¾åƒå·¦ä¸Šè§’padå¡«å……
             max_h_w_i = np.max([new_h, new_w, input_size])
             im_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
             im_padded[:new_h, :new_w, :] = cur_img.copy()
             cur_img = im_padded
-            # 将填充后的图像resize到目标大小
+            # å°†å¡«å……åŽçš„å›¾åƒresizeåˆ°ç›®æ ‡å¤§å°
             new_h, new_w, _ = cur_img.shape
             resize_h = input_size
             resize_w = input_size
@@ -648,11 +670,18 @@ def image_label(txt_root, image_list, img_name, index,
             new_h, new_w, _ = cur_img.shape
             score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
 
+        print('gamma4')
+        print(str(len(rectangles)) + ' ' + str(len(texts)))
         assert len(rectangles) == len(texts), "number of box and text don't match"
+        print('gamma5')
         step_size = int(input_size // 128)
+        print('gamma6')
         images = cur_img[:, :, ::-1].astype(np.float32)
+        print('gamma7')
         score_maps = score_map[::step_size, ::step_size, np.newaxis].astype(np.float32)
+        print('gamma8')
         geo_maps = geo_map[::step_size, ::step_size, :].astype(np.float32)
+        print('gamma9')
         training_masks = training_mask[::step_size, ::step_size, np.newaxis].astype(np.float32)
 
     except Exception as e:

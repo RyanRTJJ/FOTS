@@ -116,6 +116,7 @@ if __name__ == '__main__':
                         type=pathlib.Path,
                         help='dir for input images')
     parser.add_argument('-k', '--keys',
+                        default='ryan_1',
                         type=str,
                         help='keys in common_str')
     parser.add_argument('--no_gpu',

@@ -1,5 +1,5 @@
 Based on original work by Ning Lu (https://github.com/jiangxiluning) and DongLiang Ma (https://vipermdl.github.io/)
-as well as other open-source implementations of FOTS. Many thanks to all the collaborators and contributors. 
+as well as other open-source implementations of FOTS, especially Tao Luo (@novioleo) Many thanks to all the collaborators and contributors. 
 
 Example images (imgs/example/scenario_1/1.png), (imgs/example/scenario_1/2.png).
 

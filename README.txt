@@ -3,8 +3,13 @@ as well as other open-source implementations of FOTS. Many thanks to all the col
 
 Example images (imgs/example/scenario_1/1.png), (imgs/example/scenario_1/2.png).
 
+git clone this entire project, create a virtual environment (I used conda), and install all packages as stated in 'Requirements.txt'.
+
 To run the training function, simply run:
 python train.py -c /full/path/to/config.json
+
+If you're resuming from a checkpoint, run:
+python train.py -c /full/path/to/config.json -r /full/path/to/checkpointmodel.pth.tar
 
 To evaluate / run prediction / detection / whatever:
 python eval.py -m /path/to/your/model.pth.tar  -i /path/to/eval/images -o /path/to/output/result -t /path/to/output/result/txt

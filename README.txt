@@ -1,5 +1,5 @@
 Based on original work by Ning Lu (https://github.com/jiangxiluning) and DongLiang Ma (https://vipermdl.github.io/)
-as well as other open-source implementations of FOTS, especially Tao Luo (@novioleo) Many thanks to all the collaborators and contributors. 
+as well as other open-source implementations of FOTS. Many thanks to all the collaborators and contributors. 
 
 Example images (imgs/example/scenario_1/1.png), (imgs/example/scenario_1/2.png).
 
@@ -7,7 +7,7 @@ To run the training function, simply run:
 python train.py -c /full/path/to/config.json
 
 To evaluate / run prediction / detection / whatever:
-python eval.py -m /path/to/your/model.pth.tar  -i /path/to/eval/images -o /path/to/output/result
+python eval.py -m /path/to/your/model.pth.tar  -i /path/to/eval/images -o /path/to/output/result -t /path/to/output/result/txt
 
 
 CODE CHANGES / CUSTOMIZATIONS
@@ -120,7 +120,7 @@ def default_evaluation_params():
         'LTRB': False,  # LTRB:2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
         'CRLF': False,  # Lines are delimited by Windows CRLF format
         'CONFIDENCES': False,  # Detections must include confidence value. MAP and MAR will be calculated,
-        'SPECIAL_CHARACTERS': '',
+        'SPECIAL_CHARACTERS': '', #RYAN
         'ONLY_REMOVE_FIRST_LAST_CHARACTER': True
     }
     
@@ -130,7 +130,7 @@ ORIGINAL:
                             onlyRemoveFirstLastCharacterGT = True):
                             
 CHANGED:
-    def transcription_match(transGt, transDet, specialCharacters = '',
+    def transcription_match(transGt, transDet, specialCharacters = '',   #RYAN
                             onlyRemoveFirstLastCharacterGT = True):
 
 #iii
@@ -210,3 +210,29 @@ CHANGED:
         transcription = transcription.strip()
 
         return transcription
+        
+================================================================================================
+4) CTC-Loss Code (Change if you see 'inf' or '-inf' appearing)
+Happens when you have too many classes, total loss probability(class) is too low, approxed to 0
+File: /path/to/anaconda3_env_or_wherever_your_install_libs_are/lib/python3.6/site-packages/torch/nn/modules/loss.py
+================================================================================================
+
+ORIGINAL: (Inside class CTCLoss(_Loss))
+    @weak_script_method
+    def forward(self, log_probs, targets, input_lengths, target_lengths):
+        return F.ctc_loss(log_probs, targets, input_lengths, target_lengths, self.blank, self.reduction)
+        
+CHANGED: (Inside class CTCLoss(_Loss))
+    @weak_script_method
+    def forward(self, log_probs, targets, input_lengths, target_lengths):
+        
+        recognitionloss = F.ctc_loss(log_probs, targets, input_lengths, target_lengths, self.blank, self.reduction)
+        
+        """implement a catch here if you know how to calculate a suitable default loss value.        
+        if recognitionloss.item() == float('inf') or None:
+            print('detected None')
+            recognitionloss = torch.tensor(4.53259949, device="cuda:0")        #4.53259949 = -log(1/93, Base e), where 93 = no. of characters / classes
+        """
+        
+        return recognitionloss
+        #RYAN

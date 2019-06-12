@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.DEBUG, format='')
 def load_model(model_path, with_gpu):
     logger.info("Loading checkpoint: {} ...".format(model_path))
     checkpoints = torch.load(model_path)
+    print('Hey')
     if not checkpoints:
         raise RuntimeError('No checkpoint found.')
     config = checkpoints['config']
@@ -57,6 +58,7 @@ def main(args: argparse.Namespace):
     image_dir = args.image_dir
     output_img_dir = args.output_img_dir
     output_txt_dir = args.output_txt_dir
+    print(output_txt_dir)
 
     if output_img_dir is not None and not os.path.exists(output_img_dir):
         os.makedirs(output_img_dir)
@@ -93,9 +95,10 @@ def main(args: argparse.Namespace):
     else:
         with torch.no_grad():
             for image_fn in tqdm(image_dir.glob('*.jpg')):
-                Toolbox.predict(image_fn, model, with_image, output_img_dir, with_gpu, None, None,
+                print(type(args.keys))
+                Toolbox.predict(image_fn, model, with_image, output_img_dir, with_gpu, None, output_txt_dir,
                                 strLabelConverter(getattr(common_str,args.keys)))
-
+    #RYAN: Changed 'None' to 'output_txt_dir'
 
 if __name__ == '__main__':
     logger = logging.getLogger()
@@ -108,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_img_dir', type=pathlib.Path,
                         help='output dir for drawn images')
     parser.add_argument('-t', '--output_txt_dir', type=pathlib.Path,
-                        help='output dir for drawn images')
+                        help='output dir for text')
     parser.add_argument('-i', '--image_dir', default='/mnt/disk1/dataset/icdar2015/4.4/test/ch4_test_images',
                         type=pathlib.Path,
                         help='dir for input images')

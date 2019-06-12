@@ -1,3 +1,4 @@
+import pysnooper
 import numpy as np
 import torch
 
@@ -72,6 +73,18 @@ class Trainer(BaseTrainer):
                 pred_score_map, pred_geo_map, pred_recog, pred_boxes, pred_mapping, indices = self.model.forward(img,
                                                                                                                  boxes,
                                                                                                                  mapping)
+                
+                """                                                                                                 
+                print('kappa1')
+                print("pred_boxes = " + str(len(pred_boxes)))
+                print("indices: " + str(indices))
+                print('kappa2')
+                print("pred_score_map = " + str(len(pred_score_map)))
+                print('kappa3')
+                print(str(len(pred_recog[0])))
+                print('kappa4')
+                print(pred_mapping)
+                """
                 if indices is not None:
                     indice_transcripts = transcripts[indices]
                     pred_boxes = pred_boxes[indices]
@@ -94,7 +107,7 @@ class Trainer(BaseTrainer):
 
                 total_loss += loss.item()
                 total_det_loss += det_loss.item()
-                # # bad case定位
+                # # bad caseå®šä½
                 # if det_loss.item() >= 0.01:
                 #     print(image_paths)
                 total_rec_loss += reg_loss.item()
@@ -135,6 +148,7 @@ class Trainer(BaseTrainer):
             'recall': total_metrics[1] / dataset_size,
             'hmean': total_metrics[2] / dataset_size
         }
+        
 
         if self.valid:
             val_log = self._valid_epoch()

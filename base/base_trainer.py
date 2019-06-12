@@ -1,3 +1,4 @@
+import pysnooper
 import os
 import math
 import json
@@ -69,13 +70,14 @@ class BaseTrainer:
         if finetune and not resume:
             self._restore_checkpoint(finetune)
 
-
+    #@pysnooper.snoop()
     def train(self):
         """
         Full training logic
         """
         for epoch in range(self.start_epoch, self.epochs + 1):
             try:
+                print(epoch)
                 result = self._train_epoch(epoch)
             except torch.cuda.CudaError:
                 self._log_memory_usage()
@@ -130,6 +132,7 @@ class BaseTrainer:
 
         :param epoch: Current epoch number
         """
+        print('NotImplementedError')
         raise NotImplementedError
 
     def _save_checkpoint(self, epoch, log, save_best=False):

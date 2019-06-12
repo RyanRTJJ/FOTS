@@ -14,6 +14,13 @@ python train.py -c /full/path/to/config.json -r /full/path/to/checkpointmodel.pt
 To evaluate / run prediction / detection / whatever:
 python eval.py -m /path/to/your/model.pth.tar  -i /path/to/eval/images -o /path/to/output/result -t /path/to/output/result/txt
 
+Images: http://msvocds.blob.core.windows.net/coco2014/train2014.zip (wget / curl this URL)
+Annotations: https://s3.amazonaws.com/cocotext/COCO_Text.zip (wget / curl this also)
+Because the images are 13GB, I recommend using this script to split the downloads: https://sourceforge.net/projects/pcurl/files/latest/download
+
+COCO API: https://github.com/andreasveit/coco-text
+*I edited coco_text_Demo.py and ran it to filter out all relevant imageID and annotationID and copy all relevant images and textfiles to a specified directory. I have written the code below. Just overwrite the original coco_text_Demo.py code with the following code, change your paths, and run it. It should work.
+
 
 CODE CHANGES / CUSTOMIZATIONS
 ================================================================================================

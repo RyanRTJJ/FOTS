@@ -15,16 +15,15 @@ import utils.common_str as common_str
 
 class FOTSModel:
 
-    def __init__(self, config, is_train=True):
+    def __init__(self, config):
         self.mode = config['model']['mode']
-        assert self.mode.lower() in ['recognition', 'detection', 'united'], f'模式[{self.mode}]不支持'
+        assert self.mode.lower() in ['recognition', 'detection', 'united'], f'æ¨¡å¼[{self.mode}]ä¸æ”¯æŒ'
         keys = getattr(common_str, config['model']['keys'])
-        if is_train:
-            backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
-            for param in backbone_network.parameters():
-                param.requires_grad = config['need_grad_backbone']
-        else:
-            backbone_network = pm.__dict__['resnet50'](pretrained=None)
+        backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
+        backbone_network.eval()
+        # backbone as feature extractor
+        for param in backbone_network.parameters():
+            param.requires_grad = config['need_grad_backbone']
 
         def backward_hook(self, grad_input, grad_output):
             for g in grad_input:
@@ -97,9 +96,9 @@ class FOTSModel:
 
     def forward(self, image, boxes=None, mapping=None):
         """
-        :param image:   图像
-        :param boxes:   训练的时候gt的boxes
-        :param mapping: 训练的时候boxes与图像的映射
+        :param image:   å›¾åƒ
+        :param boxes:   è®­ç»ƒçš„æ—¶å€™gtçš„boxes
+        :param mapping: è®­ç»ƒçš„æ—¶å€™boxesä¸Žå›¾åƒçš„æ˜ å°„
         """
         if image.is_cuda:
             device = image.get_device()
@@ -138,7 +137,7 @@ class FOTSModel:
             if not self.training:
                 pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
             else:
-                pred_boxes, pred_mapping = boxes, mapping
+                pred_boxes,pred_mapping = boxes,mapping
 
         elif self.mode == 'recognition':
             pred_boxes, pred_mapping = boxes, mapping
@@ -159,7 +158,7 @@ class FOTSModel:
                 preds = self.recognizer(rois, lengths).permute(1, 0, 2)
                 lengths = torch.tensor(lengths).to(device)
             else:
-                preds = torch.empty(1, image.shape[0], self.nclass, dtype=torch.float)
+                preds = torch.empty(1,image.shape[0],self.nclass, dtype=torch.float)
                 lengths = torch.ones(image.shape[0])
 
         return score_map, geo_map, (preds, lengths), pred_boxes, pred_mapping, indices
@@ -190,7 +189,7 @@ class Detector(BaseModel):
         score = torch.sigmoid(score)
 
         geoMap = self.geoMap(final)
-        # 出来的是 normalise 到 0 -1 的值是到上下左右的距离，但是图像他都缩放到  512 * 512 了，但是 gt 里是算的绝对数值来的
+        # å‡ºæ¥çš„æ˜¯ normalise åˆ° 0 -1 çš„å€¼æ˜¯åˆ°ä¸Šä¸‹å·¦å³çš„è·ç¦»ï¼Œä½†æ˜¯å›¾åƒä»–éƒ½ç¼©æ”¾åˆ°  512 * 512 äº†ï¼Œä½†æ˜¯ gt é‡Œæ˜¯ç®—çš„ç»å¯¹æ•°å€¼æ¥çš„
         geoMap = torch.sigmoid(geoMap) * 512
 
         angleMap = self.angleMap(final)

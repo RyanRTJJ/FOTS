@@ -1,3 +1,5 @@
+import pysnooper
+
 import argparse
 import json
 import logging
@@ -16,7 +18,6 @@ from utils.bbox import Toolbox
 
 logging.basicConfig(level=logging.DEBUG, format='')
 
-
 def main(config, resume):
     train_logger = Logger()
 
@@ -34,13 +35,17 @@ def main(config, resume):
     elif config['data_loader']['dataset'] == 'mydataset':
         image_root = pathlib.Path(config['data_loader']['image_dir'])
         annotation_dir = pathlib.Path(config['data_loader']['annotation_dir'])
+        print('alpha1. image_root = ' + str(image_root) + ', annotation_dir = ' + str(annotation_dir))
         data_loader = OCRDataLoaderFactory(config,MyDataset(image_root,annotation_dir))
         train = data_loader.train()
         val = data_loader.val()
+    
+    #print(type(train))
+    #print(train) 
 
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(i) for i in config['gpus']])
     model = eval(config['arch'])(config)
-    model.summary()
+    #model.summary()
 
     loss = eval(config['loss'])(config['model'])
     metrics = [eval(metric) for metric in config['metrics']]
@@ -57,7 +62,9 @@ def main(config, resume):
                       toolbox = Toolbox,
                       keys=getattr(common_str,config['model']['keys']))
 
+    print('alpha3: just before trainer.train()')
     trainer.train()
+    print('alpha4: just after trainer.train()')
 
 
 if __name__ == '__main__':

@@ -13,8 +13,8 @@ class MyDataset(Dataset):
 
     def __init__(self, img_root, txt_root,limit=None):
         self.image_list, self.img_name = get_images(img_root,limit)
-        print('alpha 2. img_root =')
-        print(img_root)
+        #print('alpha 2. img_root =')
+        #print(img_root)
         self.txt_root = txt_root
 
     def __getitem__(self, index):
@@ -26,9 +26,9 @@ class MyDataset(Dataset):
                                                                                          [0.5, 1, 2.0, 3.0]),
                                                                                      background_ratio=3. / 8)
         if bboxes is None or (bboxes is not None and len(bboxes) == 0):
-            print("failed ", img_path, img, text, bboxes)
+            #print("failed ", img_path, img, text, bboxes)
             return self.__getitem__(index)
-        print("passed ", img_path, text)
+        #print("passed ", img_path, text)
         return img_path, img, score_map, geo_map, training_mask, text, bboxes
 
     def __len__(self):

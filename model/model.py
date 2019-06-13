@@ -15,15 +15,16 @@ import utils.common_str as common_str
 
 class FOTSModel:
 
-    def __init__(self, config):
+    def __init__(self, config, is_train=True):
         self.mode = config['model']['mode']
         assert self.mode.lower() in ['recognition', 'detection', 'united'], f'æ¨¡å¼[{self.mode}]ä¸æ”¯æŒ'
         keys = getattr(common_str, config['model']['keys'])
-        backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
-        backbone_network.eval()
-        # backbone as feature extractor
-        for param in backbone_network.parameters():
-            param.requires_grad = config['need_grad_backbone']
+        if is_train:
+            backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
+            for param in backbone_network.parameters():
+                param.requires_grad = config['need_grad_backbone']
+        else:
+            backbone_network = pm.__dict__['resnet50'](pretrained=None)
 
         def backward_hook(self, grad_input, grad_output):
             for g in grad_input:

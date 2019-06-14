@@ -17,6 +17,7 @@ python eval.py -m /path/to/your/model.pth.tar  -i /path/to/eval/images -o /path/
 Images: http://msvocds.blob.core.windows.net/coco2014/train2014.zip (wget / curl this URL)
 Annotations: https://s3.amazonaws.com/cocotext/COCO_Text.zip (wget / curl this also)
 Because the images are 13GB, I recommend using this script to split the downloads: https://sourceforge.net/projects/pcurl/files/latest/download
+Model: https://drive.google.com/open?id=1tQwR_ZyU-Rb4Yz0XolzioG2-qIele7Vy  (Config: 1000 epochs (116 passed), ExponentialLR, LR_Scheduler_Frequency = 50)
 
 COCO API: https://github.com/andreasveit/coco-text
 *I edited coco_text_Demo.py and ran it to filter out all relevant imageID and annotationID and copy all relevant images and textfiles to a specified directory. I have written the code below. Just overwrite the original coco_text_Demo.py code with the following code, change your paths, and run it. It should work.
